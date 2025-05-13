@@ -7,4 +7,4 @@ def analyze_sentiment(text):
     if not text:
         return 0.0
     sentiment_scores = analyzer.polarity_scores(text)
-    return sentiment_scores
+    return sentiment_scores["compound"]
