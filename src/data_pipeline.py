@@ -2,8 +2,8 @@ import requests
 import csv
 import os
 from datetime import datetime
-from src.config import NEWS_API_KEY as API_KEY
-from src.sentiment import analyze_sentiment
+from config import NEWS_API_KEY as API_KEY
+from sentiment import analyze_sentiment
 
 def fetch_news(ticker):
     """Fetches news articles for a single ticker and writes them to a CSV."""
@@ -14,7 +14,7 @@ def fetch_news(ticker):
     # Ensure data directory exists
     os.makedirs("data", exist_ok=True)
 
-    with open("data/news.csv", "w", newline='', encoding='utf-8') as f:
+    with open("data/news.csv", "a", newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
 
         # Write header only if file is empty
