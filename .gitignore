@@ -1,0 +1,10 @@
+#Secrets
+src/config.py
+
+# Environments
+.venv
+*.pyc
+.env
+
+# Data outputs
+data/
