@@ -2,7 +2,7 @@
 
 This bot collects real-time financial news headlines using NewsAPI, performs sentiment analysis, and generates trading signals for selected stocks.
 
-## Week 1 Progress
+## Day 1 Progress
 
 ✅ Multi-ticker news collection  
 ✅ API key management via config.py  
