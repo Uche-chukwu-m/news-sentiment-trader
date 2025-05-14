@@ -8,3 +8,6 @@ src/config.py
 
 # Data outputs
 data/
+
+# Tests
+src/test.py
