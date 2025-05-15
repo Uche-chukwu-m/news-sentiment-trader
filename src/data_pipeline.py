@@ -4,10 +4,12 @@ import os
 from datetime import datetime
 from config import NEWS_API_KEY as API_KEY
 from sentiment import analyze_sentiment
+from tickers import TICKER_MAP, COMPANY_LIST
 
-def fetch_news(ticker):
-    """Fetches news articles for a single ticker and writes them to a CSV."""
-    url = f"https://newsapi.org/v2/everything?q={ticker}&apiKey={API_KEY}&language=en&sortBy=publishedAt"
+
+def fetch_news(company):
+    """Fetches news articles for a single company and writes them to a CSV."""
+    url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&language=en&sortBy=publishedAt"
     response = requests.get(url)
     articles = response.json().get("articles", [])
 
@@ -28,19 +30,19 @@ def fetch_news(ticker):
                 article.get("source", {}).get("name", ""),
                 article.get("title", ""),
                 article.get("url", ""),
-                ticker,
+                company,
                 sentiment
             ])
 
-    print(f"Fetched {len(articles)} articles for {ticker}")
+    print(f"Fetched {len(articles)} articles for {company}")
     return articles
 
 if __name__ == "__main__":
-    tickers = ["Apple", "Tesla", "Microsoft", "Amazon", "Palantir"]
+    companies = COMPANY_LIST
     all_articles = []
 
-    for ticker in tickers:
-        news = fetch_news(ticker)
+    for company in companies:
+        news = fetch_news(company)
         all_articles.extend(news)
 
     print(f"Total articles fetched: {len(all_articles)}")
