@@ -36,7 +36,7 @@ def fetch_news(ticker):
     return articles
 
 if __name__ == "__main__":
-    tickers = ["Apple", "Tesla", "Microsoft", "Amazon"]
+    tickers = ["Apple", "Tesla", "Microsoft", "Amazon", "Palantir"]
     all_articles = []
 
     for ticker in tickers:

@@ -7,7 +7,8 @@ TICKER_MAP = {
     "Apple": "AAPL",
     "Tesla": "TSLA",
     "Microsoft": "MSFT",
-    "Amazon": "AMZN"
+    "Amazon": "AMZN",
+    "Palantir": "PLTR"
     # Add more if needed
 }
 
@@ -68,9 +69,9 @@ def generate_signals(news_df):
     sentiment_daily = news_df.groupby(["company", "date"])["sentiment"].mean().reset_index()
     
     def label(row):
-        if row["sentiment"] > 0.2:
+        if row["sentiment"] > 0.1:
             return "buy"
-        elif row["sentiment"] < -0.2:
+        elif row["sentiment"] < -0.1:
             return "sell"
         else:
             return "hold"
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     print(f"Final result shape: {result.shape}")
 
     print("\nSignals data sample:")
-    print(signals.head(5))
+    print(signals)
     
     print("\nStrategy results sample:")
     if not result.empty:
