@@ -1,6 +1,10 @@
 import pandas as pd
 import yfinance as yf
 import os
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from src.tickers import TICKER_MAP, COMPANY_LIST
+
 
 # Company name to Yahoo Finance ticker symbol
 TICKER_MAP = {
@@ -216,6 +220,88 @@ def simulate_returns(df):
     
     return df
 
+def plot_cumulative_returns(result_df, save_path=None):
+    """
+    Plot cumulative returns over time for each company.
+    
+    Args:
+        result_df: DataFrame with cumulative returns
+        save_path: If provided, save the plot to this file instead of displaying
+    """
+    if result_df.empty:
+        print("No data to plot.")
+        return
+    
+    # Convert date to datetime for better plotting
+    result_df["date_dt"] = pd.to_datetime(result_df["date"])
+    
+    # Create a figure with proper size
+    plt.figure(figsize=(12, 7))
+    
+    # Plot each company separately
+    companies = result_df["company"].unique()
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    
+    for i, company in enumerate(companies):
+        company_data = result_df[result_df["company"] == company].sort_values("date_dt")
+        if not company_data.empty and "cumulative_return" in company_data.columns:
+            color = colors[i % len(colors)]
+            plt.plot(company_data["date_dt"], company_data["cumulative_return"], 
+                     label=f"{company} ({company_data['cumulative_return'].iloc[-1]:.2f})",
+                     color=color, linewidth=2)
+            
+            # Mark buy/sell signals on the chart
+            buys = company_data[company_data["signal"] == "buy"]
+            sells = company_data[company_data["signal"] == "sell"]
+            
+            if not buys.empty:
+                plt.scatter(buys["date_dt"], buys["cumulative_return"], 
+                           color='green', marker='^', s=100, label=f"{company} Buy" if i == 0 else "")
+            
+            if not sells.empty:
+                plt.scatter(sells["date_dt"], sells["cumulative_return"], 
+                           color='red', marker='v', s=100, label=f"{company} Sell" if i == 0 else "")
+    
+    # Plot combined portfolio (if we want an equally weighted portfolio of all signals)
+    if len(companies) > 1:
+        # Group by date and calculate mean cumulative return across all companies
+        portfolio = result_df.groupby("date_dt")["cumulative_return"].mean().reset_index()
+        plt.plot(portfolio["date_dt"], portfolio["cumulative_return"], 
+                 label=f"Portfolio ({portfolio['cumulative_return'].iloc[-1]:.2f})",
+                 color='black', linewidth=3, linestyle='--')
+    
+    # Format x-axis to show dates nicely
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    plt.gcf().autofmt_xdate()
+    
+    # Add grid, labels, and legend
+    plt.grid(True, alpha=0.3)
+    plt.title("Cumulative Strategy Return by Company", fontsize=16)
+    plt.xlabel("Date", fontsize=12)
+    plt.ylabel("Cumulative Return", fontsize=12)
+    plt.axhline(y=1.0, color='k', linestyle='-', alpha=0.3)  # Initial investment line
+    plt.legend(loc='best')
+    plt.tight_layout()
+    
+    # Add annotations for final returns
+    for i, company in enumerate(companies):
+        company_data = result_df[result_df["company"] == company]
+        if not company_data.empty:
+            final_return = company_data["cumulative_return"].iloc[-1]
+            latest_date = company_data["date_dt"].iloc[-1]
+            plt.annotate(f"{final_return:.2f}", 
+                         (latest_date, final_return),
+                         xytext=(5, 0), textcoords='offset points', 
+                         fontsize=10, fontweight='bold')
+    
+    # Save or show
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+    else:
+        plt.show()
+
 
 if __name__ == "__main__":
     print("Loading sentiment data...")
@@ -243,13 +329,45 @@ if __name__ == "__main__":
         # Only show columns that exist
         valid_cols = [col for col in display_cols if col in result.columns]
         print(result[valid_cols].reset_index())
+
+         # Show summary statistics
+        print("\nSummary by company:")
+        for company in result["company"].unique():
+            company_data = result[result["company"] == company]
+            last_cr = company_data["cumulative_return"].iloc[-1] if not company_data.empty else None
+            nan_returns = company_data["return"].isna().sum()
+            print(f"{company}: Final CR: {last_cr:.4f}, Missing returns: {nan_returns}/{len(company_data)}")
+        
+        # Plot cumulative returns
+        print("\nPlotting cumulative returns...")
+        plot_cumulative_returns(result)
+        
+        # Visualize the trading signals and their performance
+        print("\nPlotting signals and performance...")
+        # First, identify best and worst performing days
+        result["daily_return"] = result["strategy_return"]
+        best_days = result.sort_values("daily_return", ascending=False).head(5)
+        worst_days = result.sort_values("daily_return").head(5)
+        
+        print("\nBest performing days:")
+        print(best_days[["company", "date", "signal", "daily_return"]])
+        
+        print("\nWorst performing days:")
+        print(worst_days[["company", "date", "signal", "daily_return"]])
+        
+        # Additional plot: Compare strategy vs buy-and-hold
+        # For each company, calculate buy-and-hold return
+        print("\nComparing strategy vs buy-and-hold...")
+        for company in result["company"].unique():
+            company_data = result[result["company"] == company].copy()
+            if len(company_data) > 1:
+                # Calculate buy and hold return
+                first_price = company_data["Close"].iloc[0]
+                last_price = company_data["Close"].iloc[-1]
+                bh_return = (last_price / first_price) - 1  # Percentage return
+                
+                strategy_return = company_data["cumulative_return"].iloc[-1] - 1
+                
+                print(f"{company}: Strategy: {strategy_return:.2%}, Buy-and-Hold: {bh_return:.2%}, Difference: {strategy_return - bh_return:.2%}")
     else:
         print("No results generated. Check for errors above.")
-
-    # Plot cumulative return
-    import matplotlib.pyplot as plt
-    result.plot(x="date", y="cumulative_return", title="Cumulative Strategy Return", legend=False)
-    plt.ylabel("Cumulative Return")
-    plt.grid()
-    plt.tight_layout()
-    plt.show()
