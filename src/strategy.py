@@ -244,3 +244,11 @@ if __name__ == "__main__":
         print(result[valid_cols].reset_index())
     else:
         print("No results generated. Check for errors above.")
+
+    # Plot cumulative return
+    import matplotlib.pyplot as plt
+    result.plot(x="date", y="cumulative_return", title="Cumulative Strategy Return", legend=False)
+    plt.ylabel("Cumulative Return")
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
