@@ -3,18 +3,9 @@ import yfinance as yf
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from src.tickers import TICKER_MAP, COMPANY_LIST
+from tickers import TICKER_MAP, COMPANY_LIST
 
 
-# Company name to Yahoo Finance ticker symbol
-TICKER_MAP = {
-    "Apple": "AAPL",
-    "Tesla": "TSLA",
-    "Microsoft": "MSFT",
-    "Amazon": "AMZN",
-    "Palantir": "PLTR"
-    # Add more if needed
-}
 
 def load_sentiment_data(path="data/news.csv"):
     df = pd.read_csv(path, parse_dates=["publishedAt"])
@@ -105,7 +96,7 @@ def merge_with_prices(signals_df):
         # end = "2025-05-13" #pd.to_datetime(df_signal["date"].max()) + pd.Timedelta(days=5)
 
 
-        ticker = TICKER_MAP.get(company)
+        ticker = TICKER_MAP.get(company, company)
 
         # For debugging, also handle the hardcoded dates case
         if min_date.year > 2025:  # If we're using future dates in the test
@@ -216,7 +207,7 @@ def simulate_returns(df):
 
     # Calculate cumulative returns, properly handling NaN values
     # We use fillna(0) to ensure that NaN values don't affect the cumulative product
-    df["cumulative_return"] = (1 + df["strategy_return"].fillna(0)).cumprod()
+    df["cumulative_return"] = (1 + df["strategy_return"].fillna(0))
     
     return df
 
