@@ -17,8 +17,8 @@ def fetch_price_data(ticker, start, end):
     """Fetches price data from Yahoo Finance and returns a DataFrame with date and Close price."""
     # Add buffer days to ensure we have enough data for next-day calculations
 
-    start_date = pd.to_datetime(start) - pd.Timedelta(days=2)
-    end_date = pd.to_datetime(end) + pd.Timedelta(days=2)
+    start_date = pd.to_datetime(start) - pd.Timedelta(days=0)
+    end_date = pd.to_datetime(end) + pd.Timedelta(days=5) # 5 days buffer for weekends/holidays
 
     print(f"Fetching data for {ticker} from {start_date.date()} to {end_date.date()}")
 
@@ -95,7 +95,7 @@ def merge_with_prices(signals_df):
         # start = "2025-05-07" #pd.to_datetime(df_signal["date"].min()) - pd.Timedelta(days=5)
         # end = "2025-05-13" #pd.to_datetime(df_signal["date"].max()) + pd.Timedelta(days=5)
 
-
+        company = company.title().strip()
         ticker = TICKER_MAP.get(company, company)
 
         # For debugging, also handle the hardcoded dates case
@@ -207,8 +207,8 @@ def simulate_returns(df):
 
     # Calculate cumulative returns, properly handling NaN values
     # We use fillna(0) to ensure that NaN values don't affect the cumulative product
-    df["cumulative_return"] = (1 + df["strategy_return"].fillna(0))
-    
+    df["cumulative_return"] = (1 + df["strategy_return"].fillna(0)).groupby(df["company"]).cumprod()
+
     return df
 
 def plot_cumulative_returns(result_df, save_path=None):
@@ -219,6 +219,10 @@ def plot_cumulative_returns(result_df, save_path=None):
         result_df: DataFrame with cumulative returns
         save_path: If provided, save the plot to this file instead of displaying
     """
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    
     if result_df.empty:
         print("No data to plot.")
         return
@@ -237,28 +241,32 @@ def plot_cumulative_returns(result_df, save_path=None):
         company_data = result_df[result_df["company"] == company].sort_values("date_dt")
         if not company_data.empty and "cumulative_return" in company_data.columns:
             color = colors[i % len(colors)]
+            
+            # Get previous day's cumulative return for legend
+            legend_return = company_data['cumulative_return'].iloc[-2]
+                
             plt.plot(company_data["date_dt"], company_data["cumulative_return"], 
-                     label=f"{company} ({company_data['cumulative_return'].iloc[-1]:.2f})",
+                     label=f"{company} ({legend_return:.2f})",
                      color=color, linewidth=2)
             
-            # Mark buy/sell signals on the chart
+            # Mark only the most recent buy and sell signals for each company
+            # Find the most recent buy signal
             buys = company_data[company_data["signal"] == "buy"]
             sells = company_data[company_data["signal"] == "sell"]
-            
-            if not buys.empty:
-                plt.scatter(buys["date_dt"], buys["cumulative_return"], 
-                           color='green', marker='^', s=100, label=f"{company} Buy" if i == 0 else "")
-            
-            if not sells.empty:
-                plt.scatter(sells["date_dt"], sells["cumulative_return"], 
-                           color='red', marker='v', s=100, label=f"{company} Sell" if i == 0 else "")
+            plt.scatter(buys["date_dt"], buys["cumulative_return"], color='green', marker='^', s=50, label=f"{company} Buy" if i == 0 and not buys.empty else None)
+            plt.scatter(sells["date_dt"], sells["cumulative_return"], color='red', marker='v', s=50, label=f"{company} Sell" if i == 0 and not sells.empty else None)
+            # Remove the 'if i == 0' if you want labels for each company's markers
     
     # Plot combined portfolio (if we want an equally weighted portfolio of all signals)
     if len(companies) > 1:
         # Group by date and calculate mean cumulative return across all companies
         portfolio = result_df.groupby("date_dt")["cumulative_return"].mean().reset_index()
+        
+        # Get latest portfolio return for legend
+        portfolio_legend_return = portfolio['cumulative_return'].iloc[-1]
+            
         plt.plot(portfolio["date_dt"], portfolio["cumulative_return"], 
-                 label=f"Portfolio ({portfolio['cumulative_return'].iloc[-1]:.2f})",
+                 label=f"Portfolio ({portfolio_legend_return:.2f})",
                  color='black', linewidth=3, linestyle='--')
     
     # Format x-axis to show dates nicely
@@ -279,8 +287,8 @@ def plot_cumulative_returns(result_df, save_path=None):
     for i, company in enumerate(companies):
         company_data = result_df[result_df["company"] == company]
         if not company_data.empty:
-            final_return = company_data["cumulative_return"].iloc[-1]
-            latest_date = company_data["date_dt"].iloc[-1]
+            final_return = company_data["cumulative_return"].iloc[-2]
+            latest_date = company_data["date_dt"].iloc[-2]
             plt.annotate(f"{final_return:.2f}", 
                          (latest_date, final_return),
                          xytext=(5, 0), textcoords='offset points', 
@@ -325,7 +333,7 @@ if __name__ == "__main__":
         print("\nSummary by company:")
         for company in result["company"].unique():
             company_data = result[result["company"] == company]
-            last_cr = company_data["cumulative_return"].iloc[-1] if not company_data.empty else None
+            last_cr = company_data["cumulative_return"].iloc[-2] if not company_data.empty else None
             nan_returns = company_data["return"].isna().sum()
             print(f"{company}: Final CR: {last_cr:.4f}, Missing returns: {nan_returns}/{len(company_data)}")
         
@@ -354,10 +362,10 @@ if __name__ == "__main__":
             if len(company_data) > 1:
                 # Calculate buy and hold return
                 first_price = company_data["Close"].iloc[0]
-                last_price = company_data["Close"].iloc[-1]
+                last_price = company_data["Close"].iloc[-2]
                 bh_return = (last_price / first_price) - 1  # Percentage return
                 
-                strategy_return = company_data["cumulative_return"].iloc[-1] - 1
+                strategy_return = company_data["cumulative_return"].iloc[-2] - 1
                 
                 print(f"{company}: Strategy: {strategy_return:.2%}, Buy-and-Hold: {bh_return:.2%}, Difference: {strategy_return - bh_return:.2%}")
     else:
