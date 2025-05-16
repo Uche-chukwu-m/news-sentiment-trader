@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+from tickers import COMPANY_LIST # or TICKER_MAP.keys()
+
 
 def load_data(file_path="data/news.csv"):
     """Loads data from a CSV file."""
@@ -16,7 +18,7 @@ def plot_avg_sentiment_per_company(df):
     plt.ylabel('Average Sentiment Score')
     plt.xlabel('Company')
     plt.grid(axis='y')
-    plt.tight_layout
+    plt.tight_layout()
     plt.show()
 
 def plot_sentiment_trend(df, company):
@@ -30,9 +32,9 @@ def plot_sentiment_trend(df, company):
     plt.tight_layout()
     plt.show()
 
-tickers = ["Apple", "Microsoft", "Amazon", "Tesla"]
+
 if __name__ == "__main__":
     df = load_data()
     plot_avg_sentiment_per_company(df)
-    for ticker in tickers:
-        plot_sentiment_trend(df, ticker) #for all tickers
+    for company_name in COMPANY_LIST: # Use the imported list
+        plot_sentiment_trend(df, company_name)
