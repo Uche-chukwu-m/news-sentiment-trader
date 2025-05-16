@@ -1,17 +1,34 @@
 import requests
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import NEWS_API_KEY as API_KEY
 from sentiment import analyze_sentiment
 from tickers import TICKER_MAP, COMPANY_LIST
+import time
 
 
-def fetch_news(company):
+# Initialize dates properly as datetime objects
+today = datetime.today()
+end_date = today
+start_date = today - timedelta(days=7) # Fetch news for the last 7 days
+
+def fetch_news(company, from_date, to_date):
     """Fetches news articles for a single company and writes them to a CSV."""
-    url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&language=en&sortBy=publishedAt"
+    # Format dates as strings for the API
+    from_date_str = from_date.strftime('%Y-%m-%d')
+    to_date_str = to_date.strftime('%Y-%m-%d')
+    
+    url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&language=en&sortBy=publishedAt&from={from_date_str}&to={to_date_str}"
     response = requests.get(url)
-    articles = response.json().get("articles", [])
+    
+    # Check if the response was successful
+    if response.status_code != 200:
+        print(f"Error fetching data for {company}: {response.status_code}")
+        return []
+    
+    data = response.json()
+    articles = data.get("articles", [])
 
     # Ensure data directory exists
     os.makedirs("data", exist_ok=True)
@@ -34,15 +51,26 @@ def fetch_news(company):
                 sentiment
             ])
 
-    print(f"Fetched {len(articles)} articles for {company}")
+    print(f"Fetched {len(articles)} articles for {company} from {from_date_str} to {to_date_str}")
     return articles
 
 if __name__ == "__main__":
     companies = COMPANY_LIST
     all_articles = []
-
-    for company in companies:
-        news = fetch_news(company)
-        all_articles.extend(news)
+    
+    # Process each day in the range 
+    current_date = start_date
+    while current_date < end_date:
+        next_date = current_date + timedelta(days=1)
+        
+        for company in companies:
+            news = fetch_news(company, current_date, next_date)
+            all_articles.extend(news)
+            time.sleep(1.5) 
+        
+        current_date = next_date
+        
+        # Optional: Add a small delay to avoid API rate limits
+        time.sleep(1.5)  # Adjust the delay as needed   
 
     print(f"Total articles fetched: {len(all_articles)}")
