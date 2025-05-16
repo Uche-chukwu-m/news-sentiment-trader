@@ -4,7 +4,10 @@ TICKER_MAP = {
     "Apple": "AAPL",
     "Tesla": "TSLA",
     "Microsoft": "MSFT",
-    "Amazon": "AMZN"
+    "Amazon": "AMZN",
+    "Palantir": "PLTR",
+    "Alphabet": "GOOGL",
+    "Nvidia": "NVDA",
     # Add more here as needed
 }
 
