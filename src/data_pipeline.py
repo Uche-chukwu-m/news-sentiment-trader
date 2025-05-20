@@ -2,9 +2,9 @@ import requests
 import csv
 import os
 from datetime import datetime, timedelta
-from config import NEWS_API_KEY as API_KEY
-from sentiment import analyze_sentiment
-from tickers import TICKER_MAP, COMPANY_LIST
+from .config import NEWS_API_KEY as API_KEY
+from .sentiment import analyze_sentiment
+from .tickers import TICKER_MAP, COMPANY_LIST
 import time
 
 
