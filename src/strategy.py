@@ -3,10 +3,25 @@ import yfinance as yf
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from tickers import TICKER_MAP, COMPANY_LIST
+from .tickers import TICKER_MAP, COMPANY_LIST
 
+"""
+This strategy assumes that a trade is entered at the closing price of the day the signal is generated (Day T).
+The trade is then exited at the closing price of the next trading day (Day T+1).
+This is a very short-term, overnight holding strategy.
+"""
 
+"""
+For each day, take the strategy_return (e.g., 0.02 for a 2% gain).
+Add 1 to it (e.g., 1.02). This is the "growth factor."
+For each company, multiply twhese daily growth factors together sequentially over time.
+This shows how an initial investment (e.g., $1) would have grown or shrunk if you followed the strategy's signals day by day.
+For example:
+Day 1: Signal Buy, Stock up 2% -> strategy_return = 0.02. Cumulative = 1.02
+Day 2: Signal Sell, Stock down 1% -> strategy_return = 0.01. Cumulative = 1.02 * (1 + 0.01) = 1.02 * 1.01 = 1.0302
+Day 3: Signal Hold -> strategy_return = 0.00. Cumulative = 1.0302 * (1 + 0.00) = 1.0302
 
+"""
 def load_sentiment_data(path="data/news.csv"):
     df = pd.read_csv(path, parse_dates=["publishedAt"])
     df["sentiment"] = pd.to_numeric(df["sentiment"], errors="coerce")
@@ -20,6 +35,14 @@ def fetch_price_data(ticker, start, end):
     start_date = pd.to_datetime(start) - pd.Timedelta(days=0)
     end_date = pd.to_datetime(end) + pd.Timedelta(days=5) # 5 days buffer for weekends/holidays
 
+    fetch_start_date = start_date - pd.Timedelta(days=5) # Increased buffer
+    fetch_end_date = end_date + pd.Timedelta(days=5)   # Increased buffer
+
+    print(f"--- DEBUG: fetch_price_data for {ticker} ---")
+    print(f"Original signal date range: {start} to {end}")
+    print(f"Fetching yfinance data from: {fetch_start_date.strftime('%Y-%m-%d')} to {fetch_end_date.strftime('%Y-%m-%d')}")
+
+    df = yf.download(ticker, start=fetch_start_date, end=fetch_end_date, progress=False, auto_adjust=False)
     print(f"Fetching data for {ticker} from {start_date.date()} to {end_date.date()}")
 
     df = yf.download(ticker, start=start_date, end=end_date, progress=False, auto_adjust=False)
@@ -27,6 +50,8 @@ def fetch_price_data(ticker, start, end):
     if df.empty:
         print(f"⚠️ No data for {ticker} in the specified date range.")
         return pd.DataFrame()
+    
+    print(f"Raw yfinance data shape for {ticker}: {df.shape}")
     
     # Handle multi-index columns (common with yfinance)
     if isinstance(df.columns, pd.MultiIndex):
@@ -211,13 +236,14 @@ def simulate_returns(df):
 
     return df
 
-def plot_cumulative_returns(result_df, save_path=None):
+def plot_cumulative_returns(result_df, save_path=None, return_fig=False):
     """
     Plot cumulative returns over time for each company.
     
     Args:
         result_df: DataFrame with cumulative returns
         save_path: If provided, save the plot to this file instead of displaying
+        return_fig: If True, return the figure object instead of showing/saving it
     """
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -294,12 +320,18 @@ def plot_cumulative_returns(result_df, save_path=None):
                          xytext=(5, 0), textcoords='offset points', 
                          fontsize=10, fontweight='bold')
     
-    # Save or show
-    if save_path:
+    if return_fig:
+        fig = plt.gcf() # Get current figure
+        plt.close(fig) # Close the figure to prevent it from displaying in non-Streamlit contexts if not intended
+        return fig
+    elif save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
+        plt.close() # Close after saving
     else:
-        plt.show()
+        plt.show() # This will block if run directly
+        plt.close() # Close after showing
+    return None # If not returning fig
 
 
 if __name__ == "__main__":
