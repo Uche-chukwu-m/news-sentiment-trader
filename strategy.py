@@ -3,7 +3,7 @@ import yfinance as yf
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from src.tickers import TICKER_MAP, COMPANY_LIST
+from tickers import TICKER_MAP, COMPANY_LIST
 
 """
 This strategy assumes that a trade is entered at the closing price of the day the signal is generated (Day T).

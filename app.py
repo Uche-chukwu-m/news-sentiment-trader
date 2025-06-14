@@ -12,14 +12,14 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 # --- Import your existing modules ---
-import src.data_pipeline as data_pipeline
-import src.strategy as strategy
+import data_pipeline as data_pipeline
+import strategy as strategy
 
 # import src.visualize as visualize 
 # Assuming visualize.py functions might be adapted or plots recreated directly
 
-from src.tickers import COMPANY_LIST, TICKER_MAP
-from src.config import NEWS_API_KEY
+from tickers import COMPANY_LIST, TICKER_MAP
+from config import NEWS_API_KEY
 
 # --- App Configuration & Title ---
 st.set_page_config(layout="wide", page_title="Sentiment Trading Strategy Analyzer")

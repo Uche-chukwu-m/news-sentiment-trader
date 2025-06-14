@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-from src.tickers import COMPANY_LIST # or TICKER_MAP.keys()
+from tickers import COMPANY_LIST # or TICKER_MAP.keys()
 
 
 def load_data(file_path="data/news.csv"):
