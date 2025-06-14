@@ -1,5 +1,6 @@
 #Secrets
 src/config.py
+.streamlit/secrets.toml
 
 # Environments
 .venv
