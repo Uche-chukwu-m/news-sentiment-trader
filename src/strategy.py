@@ -3,7 +3,7 @@ import yfinance as yf
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from .tickers import TICKER_MAP, COMPANY_LIST
+from src.tickers import TICKER_MAP, COMPANY_LIST
 
 """
 This strategy assumes that a trade is entered at the closing price of the day the signal is generated (Day T).
@@ -32,18 +32,15 @@ def fetch_price_data(ticker, start, end):
     """Fetches price data from Yahoo Finance and returns a DataFrame with date and Close price."""
     # Add buffer days to ensure we have enough data for next-day calculations
 
-    start_date = pd.to_datetime(start) - pd.Timedelta(days=0)
+    start_date = pd.to_datetime(start)
     end_date = pd.to_datetime(end) + pd.Timedelta(days=5) # 5 days buffer for weekends/holidays
 
-    fetch_start_date = start_date - pd.Timedelta(days=5) # Increased buffer
-    fetch_end_date = end_date + pd.Timedelta(days=5)   # Increased buffer
+    # fetch_start_date = start_date - pd.Timedelta(days=5) # Increased buffer
+    # fetch_end_date = end_date + pd.Timedelta(days=5)   # Increased buffer
 
     print(f"--- DEBUG: fetch_price_data for {ticker} ---")
     print(f"Original signal date range: {start} to {end}")
-    print(f"Fetching yfinance data from: {fetch_start_date.strftime('%Y-%m-%d')} to {fetch_end_date.strftime('%Y-%m-%d')}")
-
-    df = yf.download(ticker, start=fetch_start_date, end=fetch_end_date, progress=False, auto_adjust=False)
-    print(f"Fetching data for {ticker} from {start_date.date()} to {end_date.date()}")
+    print(f"Fetching yfinance data from: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
 
     df = yf.download(ticker, start=start_date, end=end_date, progress=False, auto_adjust=False)
 
@@ -87,11 +84,12 @@ def generate_signals(news_df):
 
     # Daily average sentiment
     sentiment_daily = news_df.groupby(["company", "date"])["sentiment"].mean().reset_index()
-    
+    threshold = 0.1  # Threshold for sentiment to generate buy/sell signals
+
     def label(row):
-        if row["sentiment"] > 0.1:
+        if row["sentiment"] > threshold:
             return "buy"
-        elif row["sentiment"] < -0.1:
+        elif row["sentiment"] < threshold * -1:
             return "sell"
         else:
             return "hold"

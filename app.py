@@ -14,7 +14,10 @@ from datetime import datetime, timedelta
 # --- Import your existing modules ---
 import src.data_pipeline as data_pipeline
 import src.strategy as strategy
-# import src.visualize as visualize # Assuming visualize.py functions might be adapted or plots recreated directly
+
+# import src.visualize as visualize 
+# Assuming visualize.py functions might be adapted or plots recreated directly
+
 from src.tickers import COMPANY_LIST, TICKER_MAP
 from src.config import NEWS_API_KEY
 
@@ -107,19 +110,19 @@ if st.sidebar.button("Fetch Latest News & Run Strategy", disabled=fetch_button_d
                 except OSError as e:
                     st.warning(f"Could not remove existing {news_file_path}: {e}. This might lead to issues if fetch_news appends unexpectedly.")
 
-            total_articles_fetched_this_run = 0 # Using a counter instead of extending a list directly if fetch_news writes to file
+            # total_articles_fetched_this_run = 0 # Using a counter instead of extending a list directly if fetch_news writes to file
             pipeline_start_date = datetime.combine(start_date_input, datetime.min.time())
             pipeline_end_date = datetime.combine(end_date_input, datetime.max.time())
 
-            current_fetch_date = pipeline_start_date
-            while current_fetch_date <= pipeline_end_date:
-                # st.write(f"Fetching for date: {current_fetch_date.strftime('%Y-%m-%d')}") # Progress update
-                for company in companies_to_process:
-                    # Assuming data_pipeline.fetch_news writes to news.csv and returns the articles fetched in that call
-                    articles_in_call = data_pipeline.fetch_news(company, current_fetch_date, current_fetch_date)
-                    if articles_in_call: # If fetch_news returns a list/count
-                        total_articles_fetched_this_run += len(articles_in_call)
-                current_fetch_date += timedelta(days=1) # Increment date
+            # current_fetch_date = pipeline_start_date
+            # while current_fetch_date <= pipeline_end_date:
+            # st.write(f"Fetching for date: {current_fetch_date.strftime('%Y-%m-%d')}") # Progress update
+            for company in companies_to_process:
+                # Assuming data_pipeline.fetch_news writes to news.csv and returns the articles fetched in that call
+                articles_in_call = data_pipeline.fetch_news(company, pipeline_start_date, pipeline_end_date)
+            #     if articles_in_call: # If fetch_news returns a list/count
+            #         total_articles_fetched_this_run += len(articles_in_call)
+            # current_fetch_date += timedelta(days=1) # Increment date
 
             st.success(f"News fetching process complete. Articles logged to {news_file_path}.") # Adjusted message
 
@@ -132,8 +135,8 @@ if st.sidebar.button("Fetch Latest News & Run Strategy", disabled=fetch_button_d
             else:
                 # Filter again as a safeguard, though ideally news.csv is clean
                 df_filtered_for_strategy = df_loaded_news[df_loaded_news['company'].isin(companies_to_process)].copy()
-                if df_filtered_for_strategy.empty and not df_loaded_news.empty :
-                     st.warning(f"Data was loaded from {news_file_path}, but after filtering for selected companies ({', '.join(companies_to_process)}), no data remains.")
+                # if df_filtered_for_strategy.empty and not df_loaded_news.empty :
+                    # st.warning(f"Data was loaded from {news_file_path}, but after filtering for selected companies ({', '.join(companies_to_process)}), no data remains.")
                 st.session_state.news_data = df_filtered_for_strategy # Store the correctly scoped data
                 st.info(f"Successfully prepared {len(st.session_state.news_data)} news items for the strategy.")
 
@@ -148,6 +151,7 @@ if st.sidebar.button("Fetch Latest News & Run Strategy", disabled=fetch_button_d
                 st.dataframe(df_for_signals.head())
                 if 'date' not in df_for_signals.columns:
                     st.error("CRITICAL: 'date' column MISSING before `generate_signals`!")
+                
                 # --- End DEBUG ---
 
                 st.session_state.signals_data = strategy.generate_signals(df_for_signals)
@@ -173,6 +177,12 @@ if st.sidebar.button("Fetch Latest News & Run Strategy", disabled=fetch_button_d
                     st.write(f"NaNs in `merged_data['Close']`: {merged_data['Close'].isna().sum()} / {len(merged_data)}")
                 # --- End DEBUG ---
 
+                if 'date' not in df_for_signals.columns:
+                    st.error("CRITICAL: 'date' column is missing from the loaded news data. Cannot generate signals.")
+                else:
+                    st.session_state.signals_data = strategy.generate_signals(df_for_signals)
+                    merged_data = strategy.merge_with_prices(st.session_state.signals_data)
+    
                 if not merged_data.empty:
                     st.session_state.strategy_results = strategy.simulate_returns(merged_data)
                     st.success("Strategy simulation complete!")
@@ -193,12 +203,11 @@ if not st.session_state.strategy_results.empty:
     results_df_display = st.session_state.strategy_results # This is already filtered by the companies processed in the last run
 
     st.subheader("📈 Cumulative Strategy Returns")
-    if not results_df_display.empty:
-        fig_cumulative_returns = strategy.plot_cumulative_returns(results_df_display, return_fig=True)
-        if fig_cumulative_returns:
-            st.pyplot(fig_cumulative_returns)
-        else:
-            st.write("Could not generate cumulative returns plot.")
+    fig_cumulative_returns = strategy.plot_cumulative_returns(results_df_display, return_fig=True)
+    if fig_cumulative_returns:
+        st.pyplot(fig_cumulative_returns)
+    else:
+        st.write("Could not generate cumulative returns plot.")
 
     st.subheader("📋 Detailed Strategy Results")
     with st.expander("View Detailed Data Table"):

@@ -2,9 +2,9 @@ import requests
 import csv
 import os
 from datetime import datetime, timedelta
-from .config import NEWS_API_KEY as API_KEY
-from .sentiment import analyze_sentiment
-from .tickers import TICKER_MAP, COMPANY_LIST
+from src.config import NEWS_API_KEY as API_KEY
+from src.sentiment import analyze_sentiment
+from src.tickers import TICKER_MAP, COMPANY_LIST
 import time
 
 
@@ -55,22 +55,23 @@ def fetch_news(company, from_date, to_date):
     return articles
 
 if __name__ == "__main__":
+    # First, clear the old news file to avoid appending old data
+    if os.path.exists("data/news.csv"):
+        os.remove("data/news.csv")
+        print("Removed old data/news.csv file.")
+
     companies = COMPANY_LIST
     all_articles = []
+
+    print(f"Fetching news for {len(companies)} companies from {start_date.date()} to {end_date.date()}...")
     
-    # Process each day in the range 
-    current_date = start_date
-    while current_date < end_date:
-        next_date = current_date + timedelta(days=1)
-        
-        for company in companies:
-            news = fetch_news(company, current_date, next_date)
-            all_articles.extend(news)
-            time.sleep(1.5) 
-        
-        current_date = next_date
+      
+    for company in companies:
+        # Fetch news for the entire date range for the current company
+        news = fetch_news(company, start_date, end_date)
+        all_articles.extend(news)
         
         # Optional: Add a small delay to avoid API rate limits
-        time.sleep(1.5)  # Adjust the delay as needed   
+        time.sleep(1.5)
 
     print(f"Total articles fetched: {len(all_articles)}")
