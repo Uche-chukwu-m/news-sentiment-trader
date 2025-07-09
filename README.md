@@ -16,27 +16,6 @@ This project implements and analyzes a trading strategy driven by financial news
 
 ---
 
-## 📁 Project Structure
-
-```text
-news-sentiment-trader/
-├── src/
-│   ├── __init__.py          # Makes 'src' a package
-│   ├── sentiment.py         # VADER-based sentiment analysis logic
-│   ├── tickers.py           # Company name to stock ticker mappings
-│   ├── strategy.py          # Signal generation, price merging, backtesting simulation
-│   ├── data_pipeline.py     # News fetching from NewsAPI and data storage logic
-│   └── config.py            # Configuration (e.g., API keys)
-│
-├── data/
-│   └── news.csv             # Stores collected news articles and their sentiment scores
-│
-├── app.py                   # Main Streamlit dashboard application
-├── daily_fetch.py           # Script for automated daily news fetching (can be scheduled)
-├── requirements.txt         # Python package dependencies
-└── README.md                # This file
-
-```
 
 # Timeline
 
