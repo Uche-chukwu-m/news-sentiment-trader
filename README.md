@@ -23,7 +23,6 @@ This project implements and analyzes a trading strategy driven by financial news
 ## Project Setup + Data Ingestion
 
 - ✅ Created folder structure (`src/`, `data/`, `app.py`)
-- ✅ Set up `config.py` to safely store NewsAPI key
 - ✅ Wrote initial `fetch_news()` using NewsAPI
 - ✅ Enabled multi-ticker support (Apple, Tesla, Microsoft, Amazon)
 - ✅ Appended all articles to `data/news.csv`
