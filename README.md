@@ -1,6 +1,6 @@
 # 📰 News Sentiment Trading Bot
 
-This project implements and analyzes a trading strategy driven by financial news sentiment. It fetches news articles for specified companies, scores their sentiment using VADER, generates daily buy/sell/hold signals, and backtests these signals against historical stock price data from Yahoo Finance. The results, including cumulative returns and comparisons to a buy-and-hold strategy, are visualized in an interactive Streamlit dashboard.
+This project implements and analyzes a trading strategy driven by financial news sentiment. It fetches news articles for specified companies, scores their sentiment using VADER, generates daily buy/sell/hold signals, and backtests these signals against historical stock price data from Yahoo Finance. The results are visualized in an interactive Streamlit dashboard.
 
 ---
 
@@ -12,7 +12,7 @@ This project implements and analyzes a trading strategy driven by financial news
 - **Backtesting** of strategy with 1-day returns
 - **Cumulative Return Visualization**
 - **Buy-and-Hold vs Strategy Performance Comparison**
-- **Streamlit Dashboard (coming soon)**
+- **Streamlit Dashboard**
 
 ---
 
